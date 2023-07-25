@@ -1,61 +1,86 @@
-// Pseudocode for Traveler Experience Improvement App
-
-// 1. Define the myMap object to hold map-related properties and methods
-//    - coordinates: array to store the user's current location
-//    - businesses: array to store fetched business data
-//    - map: reference to the Leaflet map object
-//    - markers: object to hold business markers
-
-// 2. Build the Leaflet map on window load
-//    - Call getCoords() to obtain the user's current location (latitude and longitude)
-//    - Build the map centered at the user's location using buildMap()
-
-// 3. When the user selects a business type and clicks the "Submit" button:
-//    - Get the selected business type from the dropdown menu
-
-// 4. Fetch business data using the Foursquare API
-//    - Call getFoursquare(businessType) with the selected business type as an argument
-//    - The getFoursquare() function will use the user's current location coordinates
-//      and the Foursquare API key to fetch data for the selected business type
-//    - Process the fetched data to extract business names, latitudes, and longitudes
-
-// 5. Add business markers to the map
-//    - Call addMarkers() with the processed business data as an argument
-//    - The addMarkers() function will loop through the businesses array
-//      and add markers for each business on the Leaflet map
-//    - Each marker will display a popup with the business name
-
-// 6. Event handlers:
-//    - On window load:
-//        - Call getCoords() to obtain the user's current location
-//        - Build the map centered at the user's location using buildMap()
-//    - On "Submit" button click:
-//        - Get the selected business type from the dropdown menu
-//        - Fetch business data using the Foursquare API and process it
-//        - Add business markers to the map
-
-// API and Function Order:
-// 1. Foursquare API: Get business data based on the user's location and selected business type
-// 2. processBusinesses(data): Extract business details from the Foursquare API response
-// 3. getCoords(): Obtain the user's current location using the Geolocation API
-// 4. buildMap(): Build the Leaflet map centered at the user's location
-// 5. addMarkers(): Add business markers to the map
-
-// How to Obtain User's Location:
-// - Use the Geolocation API to get the user's latitude and longitude
-// - Call navigator.geolocation.getCurrentPosition(resolve, reject) and return the coordinates
-
-// How to Add User's Location to the Map:
-// - Use Leaflet to create a marker with the user's coordinates
-// - Add a popup to the marker indicating "You are here"
-// - Add the marker to the map
-
-// How to Get the Selected Business Type from the User:
-// - Get the selected value from the dropdown menu using document.getElementById('business').value
-
-// How to Add Business Information to the Map:
-// - Loop through the processed business data
-// - For each business, create a marker with the business's latitude and longitude
-// - Add a popup to the marker displaying the business name
-// - Add the marker to the map
-
+const myMap = {
+	coordinates: [],
+	businesses: [],
+	map: {},
+	markers: {},
+  
+	buildMap() {
+	  this.map = L.map('map', {
+		center: this.coordinates,
+		zoom: 11,
+	  });
+  
+	  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+		attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+		minZoom: '15',
+	  }).addTo(this.map);
+  
+	  const marker = L.marker(this.coordinates)
+		.addTo(this.map)
+		.bindPopup('<p><b>You are here</b><br></p>')
+		.openPopup();
+	},
+  
+	addMarkers() {
+	  for (let i = 0; i < this.businesses.length; i++) {
+		this.markers = L.marker([
+		  this.businesses[i].lat,
+		  this.businesses[i].long,
+		])
+		.bindPopup(`<p>${this.businesses[i].name}</p>`)
+		.addTo(this.map);
+	  }
+	},
+  };
+  
+  async function getCoords() {
+	const pos = await new Promise((resolve, reject) => {
+	  navigator.geolocation.getCurrentPosition(resolve, reject);
+	});
+	return [pos.coords.latitude, pos.coords.longitude];
+  }
+  
+  async function getFoursquare(business) {
+	const apiKey = 'YOUR_FOURSQUARE_API_KEY';
+	const limit = 5;
+	const lat = myMap.coordinates[0];
+	const lon = myMap.coordinates[1];
+	const options = {
+	  method: 'GET',
+	  headers: {
+		'Accept': 'application/json',
+		'Authorization': `Bearer ${apiKey}`,
+	  },
+	};
+  
+	const response = await fetch(`https://api.foursquare.com/v2/venues/search?&query=${business}&limit=${limit}&ll=${lat},${lon}`, options);
+	const data = await response.json();
+	const businesses = data.response.venues;
+	return businesses;
+  }
+  
+  function processBusinesses(data) {
+	const businesses = data.map((element) => {
+	  return {
+		name: element.name,
+		lat: element.location.lat,
+		long: element.location.lng,
+	  };
+	});
+	return businesses;
+  }
+  
+  window.onload = async () => {
+	const coords = await getCoords();
+	myMap.coordinates = coords;
+	myMap.buildMap();
+  };
+  
+  document.getElementById('submit').addEventListener('click', async (event) => {
+	event.preventDefault();
+	const businessType = document.getElementById('business').value;
+	const data = await getFoursquare(businessType);
+	myMap.businesses = processBusinesses(data);
+	myMap.addMarkers();
+  });
+  
