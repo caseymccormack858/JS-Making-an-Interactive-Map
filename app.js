@@ -1,96 +1,61 @@
-// map object
-const myMap = {
-	coordinates: [],
-	businesses: [],
-	map: {},
-	markers: {},
+// Pseudocode for Traveler Experience Improvement App
 
-	// build leaflet map
-	buildMap() {
-		this.map = L.map('map', {
-		center: this.coordinates,
-		zoom: 11,
-		});
-		// add openstreetmap tiles
-		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-		attribution:
-			'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-		minZoom: '15',
-		}).addTo(this.map)
-		// create and add geolocation marker
-		const marker = L.marker(this.coordinates)
-		marker
-		.addTo(this.map)
-		.bindPopup('<p1><b>You are here</b><br></p1>')
-		.openPopup()
-	},
+// 1. Define the myMap object to hold map-related properties and methods
+//    - coordinates: array to store the user's current location
+//    - businesses: array to store fetched business data
+//    - map: reference to the Leaflet map object
+//    - markers: object to hold business markers
 
-	// add business markers
-	addMarkers() {
-		for (var i = 0; i < this.businesses.length; i++) {
-		this.markers = L.marker([
-			this.businesses[i].lat,
-			this.businesses[i].long,
-		])
-			.bindPopup(`<p1>${this.businesses[i].name}</p1>`)
-			.addTo(this.map)
-		}
-	},
-}
+// 2. Build the Leaflet map on window load
+//    - Call getCoords() to obtain the user's current location (latitude and longitude)
+//    - Build the map centered at the user's location using buildMap()
 
-// get coordinates via geolocation api
-async function getCoords(){
-	const pos = await new Promise((resolve, reject) => {
-		navigator.geolocation.getCurrentPosition(resolve, reject)
-	});
-	return [pos.coords.latitude, pos.coords.longitude]
-}
+// 3. When the user selects a business type and clicks the "Submit" button:
+//    - Get the selected business type from the dropdown menu
 
-// get foursquare businesses
-async function getFoursquare(business) {
-	const options = {
-		method: 'GET',
-		headers: {
-		Accept: 'application/json',
-		Authorization: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkRKamN6OWlUQXl1azdQYkxidzV3dCJ9.eyJpc3MiOiJodHRwczovL2F1dGguc3R1ZGlvLmZvdXJzcXVhcmUuY29tLyIsInN1YiI6ImF1dGgwfDY0YmYwZjcwMzg4Zjk0ZjVhZWJiNGNmZCIsImF1ZCI6WyJodHRwczovL2ZvdXJzcXVhcmUuY29tL2FwaS8iLCJodHRwczovL3VuZm9sZGVkLmF1dGgwLmNvbS91c2VyaW5mbyJdLCJpYXQiOjE2OTAyNDM1MTUsImV4cCI6MTY5MDMyOTkxNSwiYXpwIjoidjk3MGRwYmNxbVJ0cjN5OVh3bEFCM2R5Y3Bzdk5SWkYiLCJzY29wZSI6Im9wZW5pZCBlbWFpbCBvZmZsaW5lX2FjY2VzcyJ9.bTojmerdZPxUjvOOiInRo4oMiphUCRBNxN_bLNdLRLwvnfC-2v6koij6csbXaWij6xtznVmSFls-Q2SdcWJ4QcdxRqfCqrJNoH3DebMksl8CkIMsFM7yw7tZcpKtjhDabUfS5CmAejkpjXDBCfVyKPwcIVO2Pb81JhHhVCX9J6P3Ps_9FstKsZURHjTCTs40DmC0C6WxKDKo1SdV7Vbq_r4UsvMq-R5tQVoPkskU2cr0zZTMxvyoSECp705H7mj8h_LaLsh-MtO381e4C4Vg9beBP12ELDN_qvCQRrgBYg9-DjqtQ9JcslDKp8b0y17Ms8Mqvhtzk1UncIZ9fEvnDw'
-		}
-	}
-	let limit = 5
-	let lat = myMap.coordinates[0]
-	let lon = myMap.coordinates[1]
-	let response = await fetch(`https://api.foursquare.com/v3/places/search?&query=${business}&limit=${limit}&ll=${lat}%2C${lon}`, options)
-	let data = await response.text()
-	let parsedData = JSON.parse(data)
-	let businesses = parsedData.results
-	return businesses
-}
-// process foursquare array
-function processBusinesses(data) {
-	let businesses = data.map((element) => {
-		let location = {
-			name: element.name,
-			lat: element.geocodes.main.latitude,
-			long: element.geocodes.main.longitude
-		};
-		return location
-	})
-	return businesses
-}
+// 4. Fetch business data using the Foursquare API
+//    - Call getFoursquare(businessType) with the selected business type as an argument
+//    - The getFoursquare() function will use the user's current location coordinates
+//      and the Foursquare API key to fetch data for the selected business type
+//    - Process the fetched data to extract business names, latitudes, and longitudes
 
+// 5. Add business markers to the map
+//    - Call addMarkers() with the processed business data as an argument
+//    - The addMarkers() function will loop through the businesses array
+//      and add markers for each business on the Leaflet map
+//    - Each marker will display a popup with the business name
 
-// event handlers
-// window load
-window.onload = async () => {
-	const coords = await getCoords()
-	myMap.coordinates = coords
-	myMap.buildMap()
-}
+// 6. Event handlers:
+//    - On window load:
+//        - Call getCoords() to obtain the user's current location
+//        - Build the map centered at the user's location using buildMap()
+//    - On "Submit" button click:
+//        - Get the selected business type from the dropdown menu
+//        - Fetch business data using the Foursquare API and process it
+//        - Add business markers to the map
 
-// business submit button
-document.getElementById('submit').addEventListener('click', async (event) => {
-	event.preventDefault()
-	let business = document.getElementById('business').value
-	let data = await getFoursquare(business)
-	myMap.businesses = processBusinesses(data)
-	myMap.addMarkers()
-})
+// API and Function Order:
+// 1. Foursquare API: Get business data based on the user's location and selected business type
+// 2. processBusinesses(data): Extract business details from the Foursquare API response
+// 3. getCoords(): Obtain the user's current location using the Geolocation API
+// 4. buildMap(): Build the Leaflet map centered at the user's location
+// 5. addMarkers(): Add business markers to the map
+
+// How to Obtain User's Location:
+// - Use the Geolocation API to get the user's latitude and longitude
+// - Call navigator.geolocation.getCurrentPosition(resolve, reject) and return the coordinates
+
+// How to Add User's Location to the Map:
+// - Use Leaflet to create a marker with the user's coordinates
+// - Add a popup to the marker indicating "You are here"
+// - Add the marker to the map
+
+// How to Get the Selected Business Type from the User:
+// - Get the selected value from the dropdown menu using document.getElementById('business').value
+
+// How to Add Business Information to the Map:
+// - Loop through the processed business data
+// - For each business, create a marker with the business's latitude and longitude
+// - Add a popup to the marker displaying the business name
+// - Add the marker to the map
+
