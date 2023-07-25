@@ -41,10 +41,11 @@ const myMap = {
   }
   
   async function getFoursquare(business) {
-	const apiKey = 'YOUR_FOURSQUARE_API_KEY';
+	const apiKey = 'YOUR_FOURSQUARE_API_KEY'; // Replace 'YOUR_FOURSQUARE_API_KEY' with your actual Foursquare API key
 	const limit = 5;
 	const lat = myMap.coordinates[0];
 	const lon = myMap.coordinates[1];
+	const endpoint = 'https://api.foursquare.com/v2/venues/search';
 	const options = {
 	  method: 'GET',
 	  headers: {
@@ -53,7 +54,7 @@ const myMap = {
 	  },
 	};
   
-	const response = await fetch(`https://api.foursquare.com/v2/venues/search?&query=${business}&limit=${limit}&ll=${lat},${lon}`, options);
+	const response = await fetch(`${endpoint}?&query=${business}&limit=${limit}&ll=${lat},${lon}`, options);
 	const data = await response.json();
 	const businesses = data.response.venues;
 	return businesses;
